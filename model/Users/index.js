@@ -14,7 +14,7 @@ const getUserById = async (userId) => {
 const addUser = async (body) => {
     const { password, email } = body;
     const schema = Joi.object({
-        password: Joi.string().alphanum().min(3).max(30).required(),
+        password: Joi.string().required(),
         email: Joi.string().required(),
     });
     const data = await new User({ password, email });
@@ -35,7 +35,7 @@ const updateTokenById = async (id, token) => {
 
 const updateUser = async (userId, body) => {
     const schema = Joi.object({
-        password: Joi.string().alphanum().min(3).max(30).required(),
+        password: Joi.string().required(),
         email: Joi.string().required(),
     });
     const validationResult = schema.validate(body);

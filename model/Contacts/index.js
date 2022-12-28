@@ -23,13 +23,12 @@ const removeContact = async (contactId) => {
 const addContact = async (body) => {
     const { name, email, phone, favorite } = body;
     const schema = Joi.object({
-        name: Joi.string().alphanum().min(3).max(30).required(),
+        name: Joi.string().required(),
         email: Joi.string().required(),
         phone: Joi.required(),
     });
     const data = await new Contact({ name, email, phone, favorite });
     console.log(data);
-
 
     const validationResult = schema.validate(body);
     if (validationResult.error) return false;
