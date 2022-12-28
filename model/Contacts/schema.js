@@ -1,4 +1,5 @@
-const mongoose = require('../db')
+const mongoose = require('../../db')
+
 const Schema = mongoose.Schema;
 
 const contacts = new Schema({
@@ -15,6 +16,10 @@ const contacts = new Schema({
     favorite: {
         type: Boolean,
         default: false,
+    },
+    owner: {
+        type: mongoose.ObjectId,
+        ref: "user",
     },
 });
 
