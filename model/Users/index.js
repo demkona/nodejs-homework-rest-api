@@ -1,5 +1,5 @@
 const Joi = require("joi");
-const User = require("./shema");
+const User = require("./schema");
 
 const listUsers = async () => {
     const users = await User.find();
@@ -11,21 +11,13 @@ const getUserById = async (userId) => {
     return data;
 };
 
-<<<<<<< HEAD
 const addUser = async (body) => {
-=======
-const addUser = async (body, avatarURL) => {
->>>>>>> master
     const { password, email } = body;
     const schema = Joi.object({
         password: Joi.string().alphanum().min(3).max(30).required(),
         email: Joi.string().required(),
     });
-<<<<<<< HEAD
     const data = await new User({ password, email });
-=======
-  const data = await new User({ password, email, avatarURL });
->>>>>>> master
     data.setPassword(password);
     const validationResult = schema.validate(body);
     if (validationResult.error) return false;
