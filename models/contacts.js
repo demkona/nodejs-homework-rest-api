@@ -1,71 +1,65 @@
-const fs = require('fs/promises');
-const path = require('path');
-const { v4: uuidv4 } = require('uuid');
-const Joi = require('joi');
+const { Schema, model } = require("mongoose");
+const { handleSaveErrors } = require("../helpers");
+const Joi = require("joi");
 
-const contactsPath = path.resolve('./models/contacts.json');
+const emailRegExp = /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/;
+const phoneRegExp =
+    /^(\+?\d{0,4})?\s?-?\s?(\(?\d{3}\)?)\s?-?\s?(\(?\d{3}\)?)\s?-?\s?(\(?\d{4}\)?)?$/;
 
-const setContacts = async data => fs.writeFile(contactsPath, JSON.stringify(data));
+const contactSchema = new Schema(
+    {
+        name: {
+            type: String,
+            required: true,
+            minLength: 3,
+            maxLength: 30,
+        },
+        email: {
+            type: String,
+            trim: true,
+            lowercase: true,
+            required: true,
+            match: [emailRegExp, "Please fill a valid email address"],
+        },
+        phone: {
+            type: String,
+            match: [phoneRegExp, "Please fill a valid phone number"],
+            required: true,
+        },
+        owner: {
+            type: Schema.Types.ObjectId,
+            ref: "user",
+        },
+        favorite: {
+            type: Boolean,
+            default: false,
+        },
+    },
+    { versionKey: false, timestamps: true }
+);
 
-const listContacts = async () => {
-  const contacts = JSON.parse(await fs.readFile(contactsPath, 'utf-8'));
-  return await contacts;
-}
+contactSchema.post("save", handleSaveErrors);
 
-const getContactById = async (contactId) => {
-  const contacts = listContacts();
-  const contactById = contacts.find(item => contactId === item.id);
-  return contactById;
-}
+const contactsSchema = Joi.object({
+    name: Joi.string().min(3).max(30).required(),
+    email: Joi.string().pattern(emailRegExp).required().messages({
+        "string.pattern.base": `Please fill a valid email address`,
+    }),
+    phone: Joi.string().pattern(phoneRegExp).required().messages({
+        "string.pattern.base": `Please fill a valid phone number`,
+    }),
+    favorite: Joi.boolean(),
+});
 
-const removeContact = async (contactId) => {
-  const contacts = await listContacts();
-  const newContacts = contacts.filter(item => item.id !== contactId);
-  setContacts(newContacts);
-}
+const favoriteSchema = Joi.object({
+    favorite: Joi.boolean().required(),
+});
 
-const addContact = async (body) => {
-  const schema = Joi.object({
-    name: Joi.string().required(),
-    email: Joi.string().required(),
-    phone: Joi.required(),
-  });
-  const validationContacts = schema.validate(body);
-  if (validationContacts.error) return false;
-  console.log(validationContacts);
-  const contacts = await listContacts();
-  const newContact = { id: uuidv4(), ...body };
-  contacts.push(newContact);
-  setContacts(contacts);
-  return contacts;
-}
+const joiContactsSchemas = {
+    contactsSchema,
+    favoriteSchema,
+};
 
-const updateContact = async (contactId, body) => {
-  const schema = Joi.object({
-    name: Joi.string().required(),
-    email: Joi.string().required(),
-    phone: Joi.required(),
-  });
-  const validationContacts = schema.validate(body);
-  if (validationContacts.error)
-    return validationContacts.error.details[0].message;
-  const contacts = await listContacts();
-  const contactIndex = contacts.findIndex(item => contactId === item.id);
-  if (contactIndex === -1) return false;
-  const newUpdateContact = {
-    ...contacts[contactIndex],
-    id: contacts[contactIndex].id,
-    ...body,
-  };
-  contacts.splice(contactIndex, 1, newUpdateContact);
-  setContacts(contacts);
-  return contacts;
-}
+const Contact = model("contact", contactSchema);
 
-module.exports = {
-  listContacts,
-  getContactById,
-  removeContact,
-  addContact,
-  updateContact,
-}
+module.exports = { Contact, joiContactsSchemas };

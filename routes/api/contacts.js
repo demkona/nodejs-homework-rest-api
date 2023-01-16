@@ -1,63 +1,45 @@
-const express = require('express');
-const { listContacts, getContactById, removeContact, addContact, updateContact } = require('../../models/contacts.js');
+const express = require("express");
+const {
+    validation,
+    ctrlWrapper,
+    isValidId,
+    checkJwt,
+    checkUniqData,
+} = require("../../middlewares");
+const { joiContactsSchemas } = require("../../models");
+const { contacts: ctrl } = require("../../controller");
+
 const router = express.Router();
-const createError = require('http-errors');
 
-router.get('/', async (req, res, next) => {
-  try {
-    const getListContacts = await listContacts();
-    return res.status(200).json(getListContacts);
-  } catch (err) {
-    next(createError(err));
-  }
-});
+router.get("/", checkJwt, ctrlWrapper(ctrl.getAll));
 
-router.get('/:contactId', async (req, res, next) => {
-  try {
-    const getContactId = await getContactById(req.params.contactId);
-    if (!getContactId) throw new Error();
-    return res.json(getContactId);
-  } catch (err) {
-    return res.status(404).json({ massage: 'Not found' });
-  }
-});
+router.get("/:contactId", checkJwt, isValidId, ctrlWrapper(ctrl.getById));
 
-router.post('/', async (req, res, next) => {
-  try {
-    const newContact = await addContact(req.body);
-    if (!newContact) throw new Error();
-    return res.status(201).json(newContact);
-  } catch (err) {
-    return res.status(400).json({ message: 'missing required name field' });
-  }
-});
+router.post(
+    "/",
+    checkJwt,
+    validation(joiContactsSchemas.contactsSchema),
+    checkUniqData,
+    ctrlWrapper(ctrl.add)
+);
 
-router.delete('/:contactId', async (req, res, next) => {
-  try {
-    const deleteContact = await removeContact(
-      await req.params.contactId,
-    );
-    if (!deleteContact) throw new Error();
-    res.status(200).json({ message: 'contact deleted' });
-  } catch (err) {
-    return res.status(404).json({ massage: 'Not found' });
-  }
-});
+router.delete("/:contactId", checkJwt, isValidId, ctrlWrapper(ctrl.remove));
 
-router.patch('/:contactId', async (req, res, next) => {
-  try {
-    const newUpdateContact = await updateContact(
-      req.params.contactId,
-      req.body,
-    );
-    if (!newUpdateContact) throw new Error();
-    if (typeof newUpdateContact === 'string') {
-      return res.status(400).json({ message: newUpdateContact });
-    }
-    res.status(200).json(newUpdateContact);
-  } catch (err) {
-    return res.status(404).json({ message: 'Not found' });
-  }
-});
+router.put(
+    "/:contactId",
+    checkJwt,
+    isValidId,
+    validation(joiContactsSchemas.contactsSchema),
+    checkUniqData,
+    ctrlWrapper(ctrl.update)
+);
+
+router.patch(
+    "/:contactId/favorite",
+    checkJwt,
+    isValidId,
+    validation(joiContactsSchemas.favoriteSchema),
+    ctrlWrapper(ctrl.patch)
+);
 
 module.exports = router;
