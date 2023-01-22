@@ -13,6 +13,11 @@ const signIn = async (req, res) => {
     if (!user.comparePassword(password)) {
         throw RequestError(401, "Password is wrong");
     }
+    
+    if (!user.verify) {
+        throw RequestError(403, "Email not verify");
+    }
+
 
     const token = generateToken(user);
 
