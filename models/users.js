@@ -29,7 +29,18 @@ const userSchema = new Schema(
             enum: ["starter", "pro", "business"],
             default: "starter",
         },
-        avatarURL: String,
+        avatarURL: {
+            type: String,
+            required: true,
+        },
+        verify: {
+            type: Boolean,
+            default: false,
+        },
+        verificationCode: {
+            type: String,
+            require: [true, "Verify token is required"],
+        },
         token: {
             type: String,
             default: null,
@@ -67,10 +78,17 @@ const joiSubscriptionSchema = Joi.object({
     subscription: Joi.string().valid("starter", "pro", "business").required(),
 });
 
+const joiVerifyEmailSchema = Joi.object({
+    email: Joi.string().pattern(emailRegExp).required().messages({
+        "string.pattern.base": `Please fill a valid email address`,
+    }),
+});
+
 const joiUserSchemas = {
     joiSingUpSchema,
     joiSingInSchema,
     joiSubscriptionSchema,
+    joiVerifyEmailSchema,
 };
 
 const User = model("user", userSchema);
